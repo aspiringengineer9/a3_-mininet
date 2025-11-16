@@ -2,7 +2,7 @@
 
 from mininet.topo import Topo
 from mininet.net import Mininet
-from mininet.node import OVSKernelSwitch
+from mininet.node import OVSKernelSwitch, OVSController
 from mininet.log import setLogLevel
 
 
@@ -15,9 +15,9 @@ class Exp2Topo(Topo):
         s1 = self.addSwitch("s1")
         s2 = self.addSwitch("s2")
 
-        self.addLink(h1, s1)   # h1 -> s1-eth1  (port 1)
-        self.addLink(h2, s1)   # h2 -> s1-eth2  (port 2)
-        self.addLink(s1, s2)   # s1-eth3        (port 3)
+        self.addLink(h1, s1)   # s1-eth1 port 1
+        self.addLink(h2, s1)   # s1-eth2 port 2
+        self.addLink(s1, s2)   # s1-eth3 port 3
         self.addLink(s2, h3)
 
 
@@ -25,7 +25,7 @@ def run():
     topo = Exp2Topo()
     net = Mininet(
         topo=topo,
-        controller=None,
+        controller=OVSController,      # <-- REQUIRED!!
         switch=OVSKernelSwitch,
         autoSetMacs=True,
         autoStaticArp=True,
@@ -39,24 +39,19 @@ def run():
 
         f.write("=== Experiment 2: SDN (L2) ===\n\n")
 
-        # Baseline pings
+        # Baseline (must succeed!)
         f.write("Ping h1->h3 BEFORE flows:\n")
         f.write(h1.cmd("ping -c 1 10.0.0.3") + "\n")
 
         f.write("Ping h2->h3 BEFORE flows:\n")
         f.write(h2.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        # Clear old flows
+        # Clear flows
         s1.cmd("ovs-ofctl del-flows s1")
 
-        # === INSTALL CORRECT FLOWS ===
-        # h2 -> drop
+        # Install numeric flows
         s1.cmd('ovs-ofctl add-flow s1 "in_port=2,actions=drop"')
-
-        # h1 -> s2
         s1.cmd('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"')
-
-        # s2 -> h1
         s1.cmd('ovs-ofctl add-flow s1 "in_port=3,actions=output:1"')
 
         flows = s1.cmd("ovs-ofctl dump-flows s1")
