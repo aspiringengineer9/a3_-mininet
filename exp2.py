@@ -3,127 +3,89 @@
 from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.node import OVSKernelSwitch
-from mininet.log import setLogLevel, info
+from mininet.log import setLogLevel
+import re
 
 
 class Exp2Topo(Topo):
-    """
-    L2 topology:
+    def build(self):
+        h1 = self.addHost("h1", ip="10.0.0.1/24")
+        h2 = self.addHost("h2", ip="10.0.0.2/24")
+        h3 = self.addHost("h3", ip="10.0.0.3/24")
 
-        h1 ---- s1 ---- s2 ---- h3
-                |
-               h2
+        s1 = self.addSwitch("s1")
+        s2 = self.addSwitch("s2")
 
-    h1-eth0 <-> s1-eth1
-    h2-eth0 <-> s1-eth2
-    s1-eth3 <-> s2-eth1
-    s2-eth2 <-> h3-eth0
-    """
+        self.addLink(h1, s1)
+        self.addLink(h2, s1)
+        self.addLink(s1, s2)
+        self.addLink(s2, h3)
 
-    def build(self, **_opts):
-        # Hosts on same subnet
-        h1 = self.addHost('h1', ip='10.0.0.1/24')
-        h2 = self.addHost('h2', ip='10.0.0.2/24')
-        h3 = self.addHost('h3', ip='10.0.0.3/24')
 
-        # Switches
-        s1 = self.addSwitch('s1')
-        s2 = self.addSwitch('s2')
-
-        # Links
-        self.addLink(h1, s1)   # h1-eth0 <-> s1-eth1
-        self.addLink(h2, s1)   # h2-eth0 <-> s1-eth2
-        self.addLink(s1, s2)   # s1-eth3 <-> s2-eth1
-        self.addLink(s2, h3)   # s2-eth2 <-> h3-eth0
+def get_port_mapping(switch):
+    output = switch.cmd("ovs-ofctl show s1")
+    lines = output.split("\n")
+    mapping = {}
+    for line in lines:
+        m = re.match(r"\s*(\d+)\(([^)]+)\)", line)
+        if m:
+            port_num = m.group(1)
+            port_name = m.group(2)
+            mapping[port_name] = port_num
+    return mapping
 
 
 def run():
     topo = Exp2Topo()
     net = Mininet(
         topo=topo,
+        controller=None,
         switch=OVSKernelSwitch,
-        controller=None,       # no external controller
         autoSetMacs=True,
         autoStaticArp=True,
     )
     net.start()
 
-    h1, h2, h3 = net['h1'], net['h2'], net['h3']
-    s1 = net['s1']
+    h1, h2, h3 = net["h1"], net["h2"], net["h3"]
+    s1 = net["s1"]
 
-    info('*** Running automated Experiment 2 and writing result2.txt\n')
+    # Detect real switch port numbers
+    ports = get_port_mapping(s1)
 
-    with open('result2.txt', 'w') as f:
-        f.write('=== Experiment 2: SDN / L2 ===\n\n')
+    p_h1 = [ports[p] for p in ports if "h1" in p][0]
+    p_h2 = [ports[p] for p in ports if "h2" in p][0]
+    p_s2 = [ports[p] for p in ports if "s2" in p][0]
 
-        # ------------------------------------------------------------
-        # Baseline pings (no manual flows yet)
-        # ------------------------------------------------------------
-        f.write('Baseline ping (no manual flows yet)\n\n')
+    with open("result2.txt", "w") as f:
+        f.write("=== Experiment 2: SDN (L2) ===\n\n")
 
-        f.write('Ping from h1 to h3:\n')
-        f.write(h1.cmd('ping -c 1 10.0.0.3'))
-        f.write('\n')
+        f.write("Ping h1->h3 BEFORE flows:\n")
+        f.write(h1.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        f.write('Ping from h2 to h3:\n')
-        f.write(h2.cmd('ping -c 1 10.0.0.3'))
-        f.write('\n')
+        f.write("Ping h2->h3 BEFORE flows:\n")
+        f.write(h2.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        # ------------------------------------------------------------
-        # OpenFlow configuration via ovs-ofctl
-        # ------------------------------------------------------------
-        f.write('=== OpenFlow configuration ===\n\n')
+        # Clear flows and add new ones
+        s1.cmd("ovs-ofctl del-flows s1")
 
-        # Show initial ports/flows
-        show_out = s1.cmd('ovs-ofctl show s1')
-        dump_before = s1.cmd('ovs-ofctl dump-flows s1')
+        s1.cmd(f'ovs-ofctl add-flow s1 "in_port={p_h2},actions=drop"')
+        s1.cmd(f'ovs-ofctl add-flow s1 "in_port={p_h1},actions=output:{p_s2}"')
+        s1.cmd(f'ovs-ofctl add-flow s1 "in_port={p_s2},actions=output:{p_h1}"')
 
-        f.write('Command: ovs-ofctl show s1\n')
-        f.write(show_out + '\n')
+        flows = s1.cmd("ovs-ofctl dump-flows s1")
 
-        f.write('Command: ovs-ofctl dump-flows s1 (before adding flows)\n')
-        f.write(dump_before + '\n')
+        f.write("\nFlows installed:\n")
+        f.write(flows + "\n")
 
-        # Clear existing flows and install our own
-        s1.cmd('ovs-ofctl del-flows s1')
+        f.write("Ping h1->h3 AFTER flows:\n")
+        f.write(h1.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        # Use *port names* so we don't care what numeric port IDs are.
-        # Drop everything coming from h2 (s1-eth2)
-        s1.cmd('ovs-ofctl add-flow s1 "in_port=s1-eth2,actions=drop"')
-
-        # Forward traffic from h1 (s1-eth1) to s2 (s1-eth3)
-        s1.cmd('ovs-ofctl add-flow s1 "in_port=s1-eth1,actions=output:s1-eth3"')
-
-        # Forward traffic from s2 (s1-eth3) back to h1 (s1-eth1)
-        s1.cmd('ovs-ofctl add-flow s1 "in_port=s1-eth3,actions=output:s1-eth1"')
-
-        dump_after = s1.cmd('ovs-ofctl dump-flows s1')
-
-        f.write('Commands used to add flows:\n')
-        f.write('ovs-ofctl del-flows s1\n')
-        f.write('ovs-ofctl add-flow s1 "in_port=s1-eth2,actions=drop"\n')
-        f.write('ovs-ofctl add-flow s1 "in_port=s1-eth1,actions=output:s1-eth3"\n')
-        f.write('ovs-ofctl add-flow s1 "in_port=s1-eth3,actions=output:s1-eth1"\n\n')
-
-        f.write('Command: ovs-ofctl dump-flows s1 (after adding flows)\n')
-        f.write(dump_after + '\n')
-
-        # ------------------------------------------------------------
-        # Pings *after* adding flows
-        # ------------------------------------------------------------
-        f.write('=== After adding flows ===\n\n')
-
-        f.write('Ping from h1 to h3 after flows:\n')
-        f.write(h1.cmd('ping -c 1 10.0.0.3'))
-        f.write('\n')
-
-        f.write('Ping from h2 to h3 after flows:\n')
-        f.write(h2.cmd('ping -c 1 10.0.0.3'))
-        f.write('\n')
+        f.write("Ping h2->h3 AFTER flows (should fail):\n")
+        f.write(h2.cmd("ping -c 1 10.0.0.3") + "\n")
 
     net.stop()
 
 
-if __name__ == '__main__':
-    setLogLevel('info')
+if __name__ == "__main__":
+    setLogLevel("info")
     run()
