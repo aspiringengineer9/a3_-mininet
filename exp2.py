@@ -15,9 +15,9 @@ class Exp2Topo(Topo):
         s1 = self.addSwitch("s1")
         s2 = self.addSwitch("s2")
 
-        self.addLink(h1, s1)   # s1-eth1 port 1
-        self.addLink(h2, s1)   # s1-eth2 port 2
-        self.addLink(s1, s2)   # s1-eth3 port 3
+        self.addLink(h1, s1)   # h1 -> s1-eth1  (port 1)
+        self.addLink(h2, s1)   # h2 -> s1-eth2  (port 2)
+        self.addLink(s1, s2)   # s1-eth3        (port 3)
         self.addLink(s2, h3)
 
 
@@ -36,31 +36,34 @@ def run():
     s1 = net["s1"]
 
     with open("result2.txt", "w") as f:
+
         f.write("=== Experiment 2: SDN (L2) ===\n\n")
 
+        # Baseline pings
         f.write("Ping h1->h3 BEFORE flows:\n")
         f.write(h1.cmd("ping -c 1 10.0.0.3") + "\n")
 
         f.write("Ping h2->h3 BEFORE flows:\n")
         f.write(h2.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        # Remove all flows
+        # Clear old flows
         s1.cmd("ovs-ofctl del-flows s1")
 
-        # ADD OUR CORRECT FLOWS
-        # Drop h2
+        # === INSTALL CORRECT FLOWS ===
+        # h2 -> drop
         s1.cmd('ovs-ofctl add-flow s1 "in_port=2,actions=drop"')
 
-        # Forward h1 -> s2
+        # h1 -> s2
         s1.cmd('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"')
 
-        # Forward s2 -> h1
+        # s2 -> h1
         s1.cmd('ovs-ofctl add-flow s1 "in_port=3,actions=output:1"')
 
         flows = s1.cmd("ovs-ofctl dump-flows s1")
         f.write("\nFlows installed:\n")
         f.write(flows + "\n")
 
+        # After flows
         f.write("Ping h1->h3 AFTER flows:\n")
         f.write(h1.cmd("ping -c 1 10.0.0.3") + "\n")
 
