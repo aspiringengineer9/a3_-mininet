@@ -42,7 +42,7 @@ def run():
     net = Mininet(
         topo=topo,
         switch=OVSKernelSwitch,
-        controller=None,
+        controller=None,       # no external controller
         autoSetMacs=True,
         autoStaticArp=True,
     )
@@ -74,6 +74,7 @@ def run():
         # ------------------------------------------------------------
         f.write('=== OpenFlow configuration ===\n\n')
 
+        # Show initial ports/flows
         show_out = s1.cmd('ovs-ofctl show s1')
         dump_before = s1.cmd('ovs-ofctl dump-flows s1')
 
@@ -83,17 +84,26 @@ def run():
         f.write('Command: ovs-ofctl dump-flows s1 (before adding flows)\n')
         f.write(dump_before + '\n')
 
-        # Add flows:
-        #  - drop all traffic coming in on s1-eth2 (in_port=2)
-        #  - forward traffic coming in on s1-eth1 (in_port=1) to s1-eth3 (port 3)
-        s1.cmd('ovs-ofctl add-flow s1 "in_port=2,actions=drop"')
-        s1.cmd('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"')
+        # Clear existing flows and install our own
+        s1.cmd('ovs-ofctl del-flows s1')
+
+        # Use *port names* so we don't care what numeric port IDs are.
+        # Drop everything coming from h2 (s1-eth2)
+        s1.cmd('ovs-ofctl add-flow s1 "in_port=s1-eth2,actions=drop"')
+
+        # Forward traffic from h1 (s1-eth1) to s2 (s1-eth3)
+        s1.cmd('ovs-ofctl add-flow s1 "in_port=s1-eth1,actions=output:s1-eth3"')
+
+        # Forward traffic from s2 (s1-eth3) back to h1 (s1-eth1)
+        s1.cmd('ovs-ofctl add-flow s1 "in_port=s1-eth3,actions=output:s1-eth1"')
 
         dump_after = s1.cmd('ovs-ofctl dump-flows s1')
 
         f.write('Commands used to add flows:\n')
-        f.write('ovs-ofctl add-flow s1 "in_port=2,actions=drop"\n')
-        f.write('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"\n\n')
+        f.write('ovs-ofctl del-flows s1\n')
+        f.write('ovs-ofctl add-flow s1 "in_port=s1-eth2,actions=drop"\n')
+        f.write('ovs-ofctl add-flow s1 "in_port=s1-eth1,actions=output:s1-eth3"\n')
+        f.write('ovs-ofctl add-flow s1 "in_port=s1-eth3,actions=output:s1-eth1"\n\n')
 
         f.write('Command: ovs-ofctl dump-flows s1 (after adding flows)\n')
         f.write(dump_after + '\n')
