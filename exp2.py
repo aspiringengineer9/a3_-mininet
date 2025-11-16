@@ -4,7 +4,6 @@ from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.node import OVSKernelSwitch
 from mininet.log import setLogLevel
-import re
 
 
 class Exp2Topo(Topo):
@@ -16,23 +15,10 @@ class Exp2Topo(Topo):
         s1 = self.addSwitch("s1")
         s2 = self.addSwitch("s2")
 
-        self.addLink(h1, s1)
-        self.addLink(h2, s1)
-        self.addLink(s1, s2)
+        self.addLink(h1, s1)   # s1-eth1 port 1
+        self.addLink(h2, s1)   # s1-eth2 port 2
+        self.addLink(s1, s2)   # s1-eth3 port 3
         self.addLink(s2, h3)
-
-
-def get_port_mapping(switch):
-    output = switch.cmd("ovs-ofctl show s1")
-    lines = output.split("\n")
-    mapping = {}
-    for line in lines:
-        m = re.match(r"\s*(\d+)\(([^)]+)\)", line)
-        if m:
-            port_num = m.group(1)
-            port_name = m.group(2)
-            mapping[port_name] = port_num
-    return mapping
 
 
 def run():
@@ -49,13 +35,6 @@ def run():
     h1, h2, h3 = net["h1"], net["h2"], net["h3"]
     s1 = net["s1"]
 
-    # Detect real switch port numbers
-    ports = get_port_mapping(s1)
-
-    p_h1 = [ports[p] for p in ports if "h1" in p][0]
-    p_h2 = [ports[p] for p in ports if "h2" in p][0]
-    p_s2 = [ports[p] for p in ports if "s2" in p][0]
-
     with open("result2.txt", "w") as f:
         f.write("=== Experiment 2: SDN (L2) ===\n\n")
 
@@ -65,15 +44,20 @@ def run():
         f.write("Ping h2->h3 BEFORE flows:\n")
         f.write(h2.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        # Clear flows and add new ones
+        # Remove all flows
         s1.cmd("ovs-ofctl del-flows s1")
 
-        s1.cmd(f'ovs-ofctl add-flow s1 "in_port={p_h2},actions=drop"')
-        s1.cmd(f'ovs-ofctl add-flow s1 "in_port={p_h1},actions=output:{p_s2}"')
-        s1.cmd(f'ovs-ofctl add-flow s1 "in_port={p_s2},actions=output:{p_h1}"')
+        # ADD OUR CORRECT FLOWS
+        # Drop h2
+        s1.cmd('ovs-ofctl add-flow s1 "in_port=2,actions=drop"')
+
+        # Forward h1 -> s2
+        s1.cmd('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"')
+
+        # Forward s2 -> h1
+        s1.cmd('ovs-ofctl add-flow s1 "in_port=3,actions=output:1"')
 
         flows = s1.cmd("ovs-ofctl dump-flows s1")
-
         f.write("\nFlows installed:\n")
         f.write(flows + "\n")
 
