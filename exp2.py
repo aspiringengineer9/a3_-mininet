@@ -6,7 +6,7 @@ from mininet.log import setLogLevel
 
 
 class Exp2Topo(Topo):
-    
+
     """
     Defining the topology
 
@@ -60,11 +60,11 @@ def run():
     # Opening the result file
     with open("result2.txt", "w") as f:
 
-
-        f.write("Ping h1->h3 BEFORE flows:\n")
+        f.write("Experiment 2: SDN \n\n")
+        f.write("Pinging h1 to h3 before flows:\n")
         f.write(h1.cmd("ping -c 1 10.0.0.3") + "\n")
 
-        f.write("Ping h2->h3 BEFORE flows:\n")
+        f.write("Pinging h2 to h3 before flows:\n")
         f.write(h2.cmd("ping -c 1 10.0.0.3") + "\n")
 
         
@@ -74,16 +74,16 @@ def run():
 
         # installing openflow rules
      
-        # dropping all traffic entering s1-eth2 (port 2)
-        # This would disable h2 → h3 communication.
+        # Rule 1: DROP all traffic entering s1-eth2 (port 2)
+        # This blocks h2 → h3 communication.
         s1.cmd('ovs-ofctl add-flow s1 "in_port=2,actions=drop"')
 
-        # forwarding traffic entering s1-eth1 (port 1) to s1-eth3 (port 3)
-        # This would enable h1 → h3 communication.
+        # Rule 2: FORWARD traffic entering s1-eth1 (port 1) to s1-eth3 (port 3)
+        # This allows h1 → h3 communication.
         s1.cmd('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"')
 
-        # forwarding traffic entering s1-eth3 (port 3) back to s1-eth1 (port 1)
-        # This would return traffic from h3 → h1.
+        # Rule 3: FORWARD traffic entering s1-eth3 (port 3) back to s1-eth1 (port 1)
+        # This allows return traffic from h3 → h1.
         s1.cmd('ovs-ofctl add-flow s1 "in_port=3,actions=output:1"')
 
         # recording installed flows
