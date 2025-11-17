@@ -1,14 +1,6 @@
-=== Experiment 1: IP Routing ===
+Experiment 1: IP Routing
 
 Ping from h1 (10.0.0.1) to h3 (10.0.2.2)
-PING 10.0.2.2 (10.0.2.2) 56(84) bytes of data.
-64 bytes from 10.0.2.2: icmp_seq=1 ttl=62 time=0.059 ms
-
---- 10.0.2.2 ping statistics ---
-1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 0.059/0.059/0.059/0.000 ms
-
-Ping from h2 (10.0.3.2) to h3 (10.0.2.2)
 PING 10.0.2.2 (10.0.2.2) 56(84) bytes of data.
 64 bytes from 10.0.2.2: icmp_seq=1 ttl=62 time=0.056 ms
 
@@ -16,19 +8,27 @@ PING 10.0.2.2 (10.0.2.2) 56(84) bytes of data.
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
 rtt min/avg/max/mdev = 0.056/0.056/0.056/0.000 ms
 
+Ping from h2 (10.0.3.2) to h3 (10.0.2.2)
+PING 10.0.2.2 (10.0.2.2) 56(84) bytes of data.
+64 bytes from 10.0.2.2: icmp_seq=1 ttl=62 time=0.027 ms
+
+--- 10.0.2.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.027/0.027/0.027/0.000 ms
+
 Ping from h3 (10.0.2.2) to h1 (10.0.0.1)
 PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
-64 bytes from 10.0.0.1: icmp_seq=1 ttl=62 time=0.044 ms
+64 bytes from 10.0.0.1: icmp_seq=1 ttl=62 time=0.017 ms
 
 --- 10.0.0.1 ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 0.044/0.044/0.044/0.000 ms
+rtt min/avg/max/mdev = 0.017/0.017/0.017/0.000 ms
 
 Ping from h3 (10.0.2.2) to h2 (10.0.3.2)
 PING 10.0.3.2 (10.0.3.2) 56(84) bytes of data.
-64 bytes from 10.0.3.2: icmp_seq=1 ttl=62 time=0.020 ms
+64 bytes from 10.0.3.2: icmp_seq=1 ttl=62 time=0.016 ms
 
 --- 10.0.3.2 ping statistics ---
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
-rtt min/avg/max/mdev = 0.020/0.020/0.020/0.000 ms
+rtt min/avg/max/mdev = 0.016/0.016/0.016/0.000 ms
 
