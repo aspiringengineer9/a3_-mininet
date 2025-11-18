@@ -74,16 +74,16 @@ def run():
 
         # installing openflow rules
      
-        # Rule 1: DROP all traffic entering s1-eth2 (port 2)
-        # This blocks h2 → h3 communication.
+        # dropping all traffic entering s1-eth2 (port 2)
+        # This would disable h2 to h3 communication.
         s1.cmd('ovs-ofctl add-flow s1 "in_port=2,actions=drop"')
 
-        # Rule 2: FORWARD traffic entering s1-eth1 (port 1) to s1-eth3 (port 3)
-        # This allows h1 → h3 communication.
+        # forwarding traffic entering s1-eth1 (port 1) to s1-eth3 (port 3)
+        # This enables h1 to h3 communication.
         s1.cmd('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"')
 
-        # Rule 3: FORWARD traffic entering s1-eth3 (port 3) back to s1-eth1 (port 1)
-        # This allows return traffic from h3 → h1.
+        # forwarding traffic entering s1-eth3 (port 3) back to s1-eth1 (port 1)
+        # This permits entry of return traffic from h3 to h1.
         s1.cmd('ovs-ofctl add-flow s1 "in_port=3,actions=output:1"')
 
         # recording installed flows
