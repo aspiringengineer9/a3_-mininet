@@ -31,13 +31,7 @@ class Exp2Topo(Topo):
         self.addLink(h2, s1)   # --> s1-eth2 (port 2)
         self.addLink(s1, s2)   # --> s1-eth3 (port 3), s2-eth1
         self.addLink(s2, h3)   # --> s2-eth2
-        """""
-        After building, s1 will have ports:
-         in port:1 (h1)
-         in port:2 (h2)
-         in port:3 (s2)
 
-        """""
 
 
 def run():
