@@ -5,20 +5,20 @@ from mininet.node import Node
 from mininet.log import setLogLevel, info
 
 
-class LinuxRouter(Node):
+class Linux_router(Node):
     """
     Let's enable IPv4 forwarding inside router node. now, r1 and r2 can forward packets between interfaces.
     
     """
     def config(self, **params):
-        super(LinuxRouter, self).config(**params)
+        super(Linux_router, self).config(**params)
         # Enable packet forwarding 
         self.cmd('sysctl -w net.ipv4.ip_forward=1')
 
     def terminate(self):
         # disable packet forwarding when router shuts down
         self.cmd('sysctl -w net.ipv4.ip_forward=0')
-        super(LinuxRouter, self).terminate()
+        super(Linux_router, self).terminate()
 
 
 class Exp1Topo(Topo):
@@ -34,8 +34,8 @@ class Exp1Topo(Topo):
         h3 = self.addHost('h3')
 
         # Creating router nodes
-        r1 = self.addNode('r1', cls=LinuxRouter)
-        r2 = self.addNode('r2', cls=LinuxRouter)
+        r1 = self.addNode('r1', cls=Linux_router)
+        r2 = self.addNode('r2', cls=Linux_router)
 
         # Creating links between routers and hosts
         self.addLink(h1, r1)   
