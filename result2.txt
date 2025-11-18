@@ -17,6 +17,12 @@ PING 10.0.0.3 (10.0.0.3) 56(84) bytes of data.
 rtt min/avg/max/mdev = 0.735/0.735/0.735/0.000 ms
 
 
+Flow commands that I executed:
+ovs-ofctl add-flow s1 "in_port=2,actions=drop"
+ovs-ofctl add-flow s1 "in_port=1,actions=output:3"
+ovs-ofctl add-flow s1 "in_port=3,actions=output:1"
+
+
 INSTALLED FLOWS:
  cookie=0x0, duration=0.014s, table=0, n_packets=0, n_bytes=0, in_port="s1-eth2" actions=drop
  cookie=0x0, duration=0.011s, table=0, n_packets=0, n_bytes=0, in_port="s1-eth1" actions=output:"s1-eth3"
@@ -35,5 +41,6 @@ PING 10.0.0.3 (10.0.0.3) 56(84) bytes of data.
 
 --- 10.0.0.3 ping statistics ---
 1 packets transmitted, 0 received, 100% packet loss, time 0ms
+
 
 
