@@ -77,7 +77,7 @@ def run():
     h1.cmd('ip route add default via 10.0.0.3')   # sends traffic to router r1
 
     h2.cmd('ip route del default || true')
-    h2.cmd('ip route add default via 10.0.3.4')   # sends traffic to router r2
+    h2.cmd('ip route add default via 10.0.3.4')   # sends traffic to router r1
 
     h3.cmd('ip route del default || true')
     h3.cmd('ip route add default via 10.0.2.1')   # sends traffic to router r2
