@@ -72,6 +72,12 @@ def run():
        
         s1.cmd("ovs-ofctl del-flows s1")
 
+        # Writing the commands that would be used 
+        f.write("\nFlow commands that I executed:\n")
+        f.write('ovs-ofctl add-flow s1 "in_port=2,actions=drop"\n')
+        f.write('ovs-ofctl add-flow s1 "in_port=1,actions=output:3"\n')
+        f.write('ovs-ofctl add-flow s1 "in_port=3,actions=output:1"\n\n')
+
         # installing openflow rules
      
         # dropping all traffic entering s1-eth2 (port 2)
